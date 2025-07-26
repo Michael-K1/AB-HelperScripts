@@ -1,0 +1,12 @@
+build/
+src/**/*.mjs
+layers/
+node_modules/
+local_admin/
+.idea/
+.npm/
+
+.serverless/
+.eslintcache
+*.tsbuildinfo
+htmlResults_*.html

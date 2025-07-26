@@ -1,0 +1,43 @@
+{
+    "compilerOptions": {
+        "types": ["node"], // Global type definitions for Node.js and Vitest
+        "target": "es2022", // ECMAScript target version for output (latest JS features)
+        "lib": ["es2022"], // Standard library files to include in the compilation
+        "outDir": "./build", // Output directory for compiled JS files
+        "rootDir": "./src", // Root directory of source TypeScript files
+        "removeComments": true, // Remove comments from emitted JS
+        "newLine": "lf", // Use LF for newlines in emitted files
+        "strict": true, // Enable all strict type-checking options
+        "noImplicitAny": true, // Raise error on expressions and declarations with implied 'any' type
+        "strictNullChecks": true, // Enable strict null checks
+        "strictFunctionTypes": true, // Enable strict checking of function types
+        "strictPropertyInitialization": true, // Enable strict checking of property initialization in classes
+        "noImplicitThis": true, // Raise error on 'this' expressions with implied 'any' type
+        "alwaysStrict": true, // Parse in strict mode and emit "use strict" for each source file
+        "noUnusedLocals": true, // Report errors on unused local variables
+        "noImplicitReturns": false, // Allow functions to not return a value on all code paths (set to false)
+        "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statements
+        "module": "es2022", // Use NodeNext module system for ESM/CommonJS compatibility
+        "moduleResolution": "bundler", // Use NodeNext module resolution for ESM/CommonJS compatibility
+        "baseUrl": "./src", // Base directory to resolve non-absolute module names
+        "paths": {
+            "@/*": ["*"], // Path alias: import from '@/foo/bar' to mean 'src/foo/bar'
+            "functions/*": ["functions/*"], // Path alias for functions directory
+            "types/*": ["@types/*"]
+        },
+        "forceConsistentCasingInFileNames": true, // Enforce consistent casing in file names
+        "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+        "esModuleInterop": true, // Emit additional JS to ease support for importing CommonJS modules
+        "isolatedModules": true, // Ensure each file can be safely transpiled independently
+        "preserveConstEnums": true, // Preserve const enums in emitted code
+        "sourceMap": false, // Do not emit source maps
+        "skipLibCheck": true, // Skip type checking of declaration files (*.d.ts)
+        "useUnknownInCatchVariables": false // Use 'any' instead of 'unknown' in catch variables
+    },
+    "include": ["src"], // Include all .ts and .mts files in src/
+    "exclude": [
+        "./node_modules",
+        "./build",
+        "./test"
+    ] // Exclude node_modules, build output, and test files
+}
