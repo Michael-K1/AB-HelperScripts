@@ -6,47 +6,56 @@ import * as csv from 'fast-csv'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
+import { DateTime } from 'luxon'
 
 //TODO read csv from input folder //! filter those that start wit DONE_XXXX
 // filter from dataset those that contains bianco e alexa //! should be input to the program
 // write to output folder
 // rename original file to the new name to show it has been done already
 
+// Define constants for timing logic
+const IMPORTANT_TIMERS = ['Total', 'Main execution']
+const isImportantTimer = (label: string): boolean =>
+    IMPORTANT_TIMERS.some((timer) => label.includes(timer) || label === timer)
+
 // Logger utility functions with verbose control
-const createLogger = (verbose: boolean = false) => {
-    return {
-        info: (message: string) => console.log(chalk.blue(`[INFO] ${message}`)),
-        success: (message: string) => console.log(chalk.green(`[SUCCESS] ${message}`)),
-        warn: (message: string) => console.log(chalk.yellow(`[WARNING] ${message}`)),
-        error: (message: string, error?: unknown) =>
-            console.error(
-                chalk.red(`[ERROR] ${message}`),
-                error ? chalk.red(error instanceof Error ? error.message : String(error)) : ''
-            ),
-        verbose: (message: string) => {
-            if (verbose) {
-                console.log(chalk.gray(`[VERBOSE] ${message}`))
+const createLogger = (verbose: boolean = false) => ({
+    info: (message: string) => console.log(chalk.blue(`[INFO] ${message}`)),
+    success: (message: string) => console.log(chalk.green(`[SUCCESS] ${message}`)),
+    warn: (message: string) => console.log(chalk.yellow(`[WARNING] ${message}`)),
+    error: (message: string, error?: unknown) =>
+        console.error(
+            chalk.red(`[ERROR] ${message}`),
+            error ? chalk.red(error instanceof Error ? error.message : String(error)) : ''
+        ),
+    verbose: (message: string) => {
+        if (verbose) {
+            console.log(chalk.gray(`[VERBOSE] ${message}`))
+        }
+    },
+    timing: {
+        start: (label: string) => {
+            if (verbose || isImportantTimer(label)) {
+                console.time(chalk.cyan(`⏱️ [TIMING] ${label}`))
+            }
+            return {
+                label,
+                startTime: DateTime.now()
             }
         },
-        timing: {
-            start: (label: string) => {
-                if (verbose || label.includes('Total') || label === 'Main execution') {
-                    console.time(chalk.cyan(`⏱️ [TIMING] ${label}`))
-                }
-                return { label, startTime: Date.now() }
-            },
-            end: (timer: { label: string; startTime: number }) => {
-                if (verbose || timer.label.includes('Total') || timer.label === 'Main execution') {
-                    console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${timer.label}`))
-                } else if (timer.label.startsWith('Processing')) {
-                    // For non-verbose mode, collect timing data without displaying
-                    const elapsed = Date.now() - timer.startTime
-                    logger.verbose(`${timer.label} completed in ${elapsed}ms`)
-                }
+        end: (timer: { label: string; startTime: DateTime }) => {
+            const isProcessingTimer = timer.label.startsWith('Processing')
+
+            if (verbose || isImportantTimer(timer.label)) {
+                console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${timer.label}`))
+            } else if (isProcessingTimer) {
+                // For non-verbose mode, collect timing data without displaying
+                const elapsed = DateTime.now().diff(timer.startTime).milliseconds
+                logger.verbose(`${timer.label} completed in ${elapsed.toFixed(0)}ms`)
             }
         }
     }
-}
+})
 
 // Initialize with default (non-verbose)
 let logger = createLogger(false)
