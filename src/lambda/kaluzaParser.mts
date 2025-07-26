@@ -1,25 +1,71 @@
 import type { kaluzaCSVHeader, kaluzaAnalysis } from '@/types/kaluza.mjs'
-import { createReadStream, createWriteStream } from 'node:fs'
+import { createReadStream, createWriteStream, existsSync, mkdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { readdir, rename } from 'node:fs/promises'
 import * as csv from 'fast-csv'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
+import chalk from 'chalk'
 
 //TODO read csv from input folder //! filter those that start wit DONE_XXXX
 // filter from dataset those that contains bianco e alexa //! should be input to the program
 // write to output folder
 // rename original file to the new name to show it has been done already
 
+// Logger utility functions with verbose control
+const createLogger = (verbose: boolean = false) => {
+    return {
+        info: (message: string) => console.log(chalk.blue(`[INFO] ${message}`)),
+        success: (message: string) => console.log(chalk.green(`[SUCCESS] ${message}`)),
+        warn: (message: string) => console.log(chalk.yellow(`[WARNING] ${message}`)),
+        error: (message: string, error?: unknown) =>
+            console.error(
+                chalk.red(`[ERROR] ${message}`),
+                error ? chalk.red(error instanceof Error ? error.message : String(error)) : ''
+            ),
+        verbose: (message: string) => {
+            if (verbose) {
+                console.log(chalk.gray(`[VERBOSE] ${message}`))
+            }
+        },
+        timing: {
+            start: (label: string) => {
+                if (verbose || label.includes('Total') || label === 'Main execution') {
+                    console.time(chalk.cyan(`⏱️ [TIMING] ${label}`))
+                }
+                return { label, startTime: Date.now() }
+            },
+            end: (timer: { label: string; startTime: number }) => {
+                if (verbose || timer.label.includes('Total') || timer.label === 'Main execution') {
+                    console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${timer.label}`))
+                } else if (timer.label.startsWith('Processing')) {
+                    // For non-verbose mode, collect timing data without displaying
+                    const elapsed = Date.now() - timer.startTime
+                    logger.verbose(`${timer.label} completed in ${elapsed}ms`)
+                }
+            }
+        }
+    }
+}
+
+// Initialize with default (non-verbose)
+let logger = createLogger(false)
+
 // Function to get all files in the input directory that don't start with DONE_
 const getInputFiles = async (inputDir: string): Promise<string[]> => {
+    // Check if input directory exists
+    if (!existsSync(inputDir)) {
+        logger.error(`Input directory ${chalk.italic(inputDir)} does not exist`)
+        return []
+    }
+
     try {
         const files = await readdir(resolve(inputDir))
         const result = files.filter((file) => !file.startsWith('DONE_'))
-        console.log(`Files that need processing: ${result.length}`)
+        logger.info(`Found ${chalk.bold(result.length)} files that need processing`)
         return result
     } catch (error) {
-        console.error(`Error reading input directory ${inputDir}:`, error)
+        logger.error(`Error reading input directory ${chalk.italic(inputDir)}:`, error)
         return []
     }
 }
@@ -31,14 +77,28 @@ const processFiles = async (
     outputDir: string = 'output',
     shouldRename: boolean = true
 ) => {
+    const totalTimer = logger.timing.start('Total processing time')
+
+    // Check if output directory exists, create it if it doesn't
+    if (!existsSync(outputDir)) {
+        logger.info(`Creating output directory: ${chalk.cyan(outputDir)}`)
+        mkdirSync(outputDir, { recursive: true })
+    }
+
     const inputFiles = await getInputFiles(inputDir)
+
     if (inputFiles.length === 0) {
-        console.log('No files to process.')
+        logger.warn('No files to process.')
+        logger.timing.end(totalTimer)
         return
     }
 
+    // Track when all files are processed for total timer
+    let filesProcessed = 0
+
     for (const file of inputFiles) {
-        console.log(`Processing file: ${file}`)
+        const fileTimer = logger.timing.start(`Processing ${file}`)
+        logger.info(`Processing file: ${chalk.bold(file)}`)
         // Process file logic will go here
         const kaluzaAnalysis: Record<string, kaluzaAnalysis> = {}
 
@@ -50,7 +110,7 @@ const processFiles = async (
                     trim: true
                 })
             )
-            .on('error', (error) => console.error(`Error processing file ${file}:`, error))
+            .on('error', (error) => logger.error(`Error processing file ${chalk.bold(file)}:`, error))
             .on('data', (row: kaluzaCSVHeader) => {
                 for (const element of dataSetFilter)
                     if (row['Data Set'].includes(element))
@@ -102,6 +162,9 @@ const processFiles = async (
                 const writeStream = createWriteStream(outputFilePath)
                 csvStream.pipe(writeStream)
 
+                const entriesCount = Object.values(kaluzaAnalysis).length
+                logger.info(`Writing ${chalk.bold(entriesCount)} entries to ${chalk.bold(`processed_${file}`)}`)
+
                 for (const element of Object.values(kaluzaAnalysis)) {
                     csvStream.write(element)
                 }
@@ -111,8 +174,25 @@ const processFiles = async (
                 // Rename the original file to mark it as processed if shouldRename is true
                 if (shouldRename) {
                     rename(join(inputDir, file), join(inputDir, `DONE_${file}`))
-                        .then(() => console.log(`Renamed ${file} to DONE_${file}`))
-                        .catch((err) => console.error(`Failed to rename ${file}:`, err))
+                        .then(() => {
+                            logger.success(`Renamed ${chalk.bold(file)} to ${chalk.bold(`DONE_${file}`)}`)
+                            logger.timing.end(fileTimer)
+
+                            // Check if this is the last file to process
+                            filesProcessed++
+                            if (filesProcessed === inputFiles.length) {
+                                logger.timing.end(totalTimer)
+                            }
+                        })
+                        .catch((err) => logger.error(`Failed to rename ${chalk.bold(file)}:`, err))
+                } else {
+                    logger.timing.end(fileTimer)
+
+                    // Check if this is the last file to process
+                    filesProcessed++
+                    if (filesProcessed === inputFiles.length) {
+                        logger.timing.end(totalTimer)
+                    }
                 }
             })
     }
@@ -143,6 +223,12 @@ const main = async () => {
             type: 'boolean',
             default: false
         })
+        .option('verbose', {
+            alias: 'v',
+            description: 'Show detailed timing and processing information',
+            type: 'boolean',
+            default: false
+        })
         .help()
         .alias('help', 'h')
         .example('$0 --filter "bianco,Alexa"', 'Filter out datasets containing bianco or Alexa')
@@ -153,20 +239,34 @@ const main = async () => {
     // Convert the filter string to an array if provided
     const dataSetFilter = argv.filter ? argv.filter.split(',').map((item) => item.trim()) : []
 
-    // Get input/output directories and rename option
+    // Get input/output directories, rename option and verbose flag
     const inputDir = argv['input-dir'] as string
     const outputDir = argv['output-dir'] as string
     const shouldRename = !(argv['disable-rename'] as boolean)
+    const isVerbose = argv['verbose'] as boolean
 
-    console.log(`Filtering out datasets containing: ${dataSetFilter.length > 0 ? dataSetFilter.join(', ') : 'none'}`)
-    console.log(`Input directory: ${inputDir}`)
-    console.log(`Output directory: ${outputDir}`)
-    console.log(`Will ${shouldRename ? '' : 'not '}rename processed files`)
+    // Re-initialize logger with verbose setting
+    logger = createLogger(isVerbose)
+
+    logger.info(`${chalk.bold('Configuration:')}`)
+    logger.info(
+        `  • Filtering datasets containing: ${
+            dataSetFilter.length > 0 ? chalk.yellow(dataSetFilter.join(', ')) : chalk.gray('none')
+        }`
+    )
+    logger.info(`  • Input directory: ${chalk.cyan(inputDir)}`)
+    logger.info(`  • Output directory: ${chalk.cyan(outputDir)}`)
+    logger.info(`  • File renaming: ${shouldRename ? chalk.green('enabled') : chalk.yellow('disabled')}`)
+    logger.info(`  • Verbose logging: ${isVerbose ? chalk.green('enabled') : chalk.gray('disabled')}`)
 
     try {
+        const mainTimer = logger.timing.start('Main execution')
         await processFiles(dataSetFilter, inputDir, outputDir, shouldRename)
+        logger.timing.end(mainTimer)
+        logger.success(`Processing completed successfully`)
     } catch (error) {
-        console.error('An error occurred during processing:', error)
+        logger.error('An error occurred during processing:', error)
+        process.exit(1)
     }
 }
 

@@ -1,5 +1,7 @@
 build/
 dist/
+input/
+output/
 src/**/*.mjs
 layers/
 node_modules/
