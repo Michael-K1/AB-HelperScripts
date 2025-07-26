@@ -1,5 +1,5 @@
 import type { kaluzaCSVHeader, kaluzaAnalysis } from '@/types/kaluza.mjs'
-import { createReadStream, createWriteStream, existsSync, mkdirSync } from 'node:fs'
+import { createReadStream, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { readdir, rename } from 'node:fs/promises'
 import * as csv from 'fast-csv'
@@ -7,6 +7,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
 import { DateTime } from 'luxon'
+import { writeCSV } from '@/functions/csv.mjs'
 
 //TODO read csv from input folder //! filter those that start wit DONE_XXXX
 // filter from dataset those that contains bianco e alexa //! should be input to the program
@@ -88,12 +89,6 @@ const processFiles = async (
 ) => {
     const totalTimer = logger.timing.start('Total processing time')
 
-    // Check if output directory exists, create it if it doesn't
-    if (!existsSync(outputDir)) {
-        logger.info(`Creating output directory: ${chalk.cyan(outputDir)}`)
-        mkdirSync(outputDir, { recursive: true })
-    }
-
     const inputFiles = await getInputFiles(inputDir)
 
     if (inputFiles.length === 0) {
@@ -162,23 +157,7 @@ const processFiles = async (
                     'X-GMean-all': kaluzaAnalysis[dataSet]['X-GMean-all'] ?? row['X-GMean']
                 }
             })
-            .on('finish', () => {
-                const csvStream = csv.format({
-                    headers: true,
-                    delimiter: ';'
-                })
-                const outputFilePath = join(outputDir, `processed_${file}`)
-                const writeStream = createWriteStream(outputFilePath)
-                csvStream.pipe(writeStream)
-
-                const entriesCount = Object.values(kaluzaAnalysis).length
-                logger.info(`Writing ${chalk.bold(entriesCount)} entries to ${chalk.bold(`processed_${file}`)}`)
-
-                for (const element of Object.values(kaluzaAnalysis)) {
-                    csvStream.write(element)
-                }
-                csvStream.end()
-            })
+            .on('finish', () => writeCSV(outputDir, file, Object.values(kaluzaAnalysis), logger.info))
             .on('close', () => {
                 // Rename the original file to mark it as processed if shouldRename is true
                 if (shouldRename) {
