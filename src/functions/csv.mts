@@ -31,6 +31,7 @@ export const writeCSV = (outputDir: string, file: string, analisys: unknown[]) =
         mkdirSync(outputDir, { recursive: true })
     }
 
+    logger.info(`Writing ${chalk.bold(analisys.length)} merged rows to CSV`)
     const csvStream = format({
         headers: true,
         delimiter: ';'
@@ -39,10 +40,10 @@ export const writeCSV = (outputDir: string, file: string, analisys: unknown[]) =
     const writeStream = createWriteStream(outputFilePath)
     csvStream.pipe(writeStream)
 
-    const entriesCount = Object.values(analisys).length
+    const entriesCount = analisys.length
     logger.info(`Writing ${chalk.bold(entriesCount)} entries to ${chalk.bold(file)}`)
 
-    for (const element of Object.values(analisys)) csvStream.write(element)
+    for (const element of analisys) csvStream.write(element)
 
     csvStream.end()
 }

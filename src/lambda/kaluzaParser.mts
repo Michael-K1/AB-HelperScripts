@@ -5,15 +5,8 @@ import * as csv from 'fast-csv'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
-import { getInputFiles, handleFileCompletion, writeCSV } from '@/functions/csv.mjs'
+import { getInputFiles, handleFileCompletion, writeCSV } from 'functions/csv.mjs'
 import { logger, configureLogger } from 'functions/utils/logger.mjs'
-
-//TODO read csv from input folder //! filter those that start wit DONE_XXXX
-// filter from dataset those that contains bianco e alexa //! should be input to the program
-// write to output folder
-// rename original file to the new name to show it has been done already
-
-// Function to get all files in the input directory that don't start with DONE_
 
 // Main function to process files
 const processFiles = async (
@@ -51,61 +44,56 @@ const processFiles = async (
             )
             .on('error', (error) => logger.error(`Error processing file ${chalk.bold(file)}:`, error))
             .on('data', (row: kaluzaCSVInput) => {
-                for (const element of dataSetFilter)
-                    if (row['Data Set'].includes(element))
-                        // skip iteration
-                        return
+                for (const element of dataSetFilter) if (row['Data Set'].includes(element)) return // skip iteration
 
                 const [dataSet, ...timestamp] = row['Data Set'].split('-')
 
                 const isAllRow = row['Gate'] === 'All'
 
+                // Create the base entry if it doesn't exist yet
                 if (!(dataSet in kaluzaAligned)) {
                     kaluzaAligned[dataSet] = {
                         'Data Set': dataSet,
-                        Gate: isAllRow ? null : row['%Gated'],
-                        '%Gated': isAllRow ? null : row['%Gated'],
-
-                        'X-Med': isAllRow ? null : row['X-Med'],
-                        'X-AMean': isAllRow ? null : row['X-AMean'],
-                        'X-GMean': isAllRow ? null : row['X-GMean'],
-
-                        'X-Med-all': isAllRow ? row['X-Med'] : null,
-                        'X-AMean-all': isAllRow ? row['X-AMean'] : null,
-                        'X-GMean-all': isAllRow ? row['X-GMean'] : null,
+                        Gate: null,
+                        '%Gated': null,
+                        'X-Med': null,
+                        'X-AMean': null,
+                        'X-GMean': null,
+                        'X-Med-all': null,
+                        'X-AMean-all': null,
+                        'X-GMean-all': null,
                         timestamp: timestamp.join('-')
                     }
+                }
+
+                // Update with values based on row type (All or not)
+                if (isAllRow) {
+                    // Update "All" metrics
+                    kaluzaAligned[dataSet]['X-Med-all'] = row['X-Med']
+                    kaluzaAligned[dataSet]['X-AMean-all'] = row['X-AMean']
+                    kaluzaAligned[dataSet]['X-GMean-all'] = row['X-GMean']
                     return
                 }
-
-                kaluzaAligned[dataSet] = {
-                    ...kaluzaAligned[dataSet],
-                    Gate: kaluzaAligned[dataSet]['%Gated'] ?? row['Gate'],
-                    '%Gated': kaluzaAligned[dataSet]['%Gated'] ?? row['%Gated'],
-
-                    'X-Med': kaluzaAligned[dataSet]['X-Med'] ?? row['X-Med'],
-                    'X-AMean': kaluzaAligned[dataSet]['X-AMean'] ?? row['X-AMean'],
-                    'X-GMean': kaluzaAligned[dataSet]['X-GMean'] ?? row['X-GMean'],
-
-                    'X-Med-all': kaluzaAligned[dataSet]['X-Med-all'] ?? row['X-Med'],
-                    'X-AMean-all': kaluzaAligned[dataSet]['X-AMean-all'] ?? row['X-AMean'],
-                    'X-GMean-all': kaluzaAligned[dataSet]['X-GMean-all'] ?? row['X-GMean']
-                }
+                // Only update regular metrics if they haven't been set yet
+                kaluzaAligned[dataSet]['Gate'] = kaluzaAligned[dataSet]['Gate'] ?? row['%Gated']
+                kaluzaAligned[dataSet]['%Gated'] = kaluzaAligned[dataSet]['%Gated'] ?? row['%Gated']
+                kaluzaAligned[dataSet]['X-Med'] = kaluzaAligned[dataSet]['X-Med'] ?? row['X-Med']
+                kaluzaAligned[dataSet]['X-AMean'] = kaluzaAligned[dataSet]['X-AMean'] ?? row['X-AMean']
+                kaluzaAligned[dataSet]['X-GMean'] = kaluzaAligned[dataSet]['X-GMean'] ?? row['X-GMean']
             })
             .on('finish', () => {
                 // First write the aligned data
-                writeCSV(outputDir, `aligned_${file}`, Object.values(kaluzaAligned))
+                const alignedRows = Object.values(kaluzaAligned)
+                writeCSV(outputDir, `aligned_${file}`, alignedRows)
 
-                //TODO: for each aligned, merge 2 rows to be a longer one with bas and ADP
                 logger.info(`Processing merged data for ${chalk.bold(file)}...`)
 
                 // Process the merged data inside the finish handler
-                const alignedRows = Object.values(kaluzaAligned)
-                const finalRows: Record<string, kaluzaFinalAnalysis> = {}
+                const analysisMap: Record<string, kaluzaFinalAnalysis> = {}
 
                 for (const e of alignedRows) {
                     // Merge logic for BAS and ADP rows
-                    const [antibody, stimulation, subject] = e['Data Set'].split('|') as string[]
+                    const [antibody, stimulation, subject] = e['Data Set'].split('|')
                     const key = `${antibody}|${subject}`
 
                     const tmp: kaluzaFinalAnalysis = {
@@ -118,27 +106,27 @@ const processFiles = async (
                         [`${stimulation}-X-GMean-all`]: e['X-GMean-all']
                     }
 
-                    if (!(key in finalRows)) {
+                    if (!(key in analysisMap)) {
                         // Merge BAS and ADP rows
-                        finalRows[key] = {
+                        analysisMap[key] = {
                             'Data Set': key,
                             ...tmp
                         }
                         continue
                     }
-                    finalRows[key] = {
-                        ...finalRows[key],
+                    analysisMap[key] = {
+                        ...analysisMap[key],
                         ...tmp
                     }
                 }
 
                 // Write the merged data to CSV
-                if (Object.keys(finalRows).length > 0) {
-                    logger.info(`Writing ${chalk.bold(Object.keys(finalRows).length)} merged rows to CSV`)
-                    writeCSV(outputDir, `merged_${file}`, Object.values(finalRows))
-                } else {
+                const finalRows = Object.values(analysisMap)
+                if (finalRows.length === 0) {
                     logger.warn(`No merged data to write for ${chalk.bold(file)}`)
+                    return
                 }
+                writeCSV(outputDir, `merged_${file}`, finalRows)
             })
             .on('close', async () => {
                 // Use the refactored function to handle file completion
