@@ -4,7 +4,7 @@
 export type kaluzaCSVInput = {
     /**
      * Data set identifier.
-     * Format is Antibody|Stimulation|Subject
+     * Format is Antibody_Stimulation_Subject
      */
     'Data Set': string
     /** Gate identifier */

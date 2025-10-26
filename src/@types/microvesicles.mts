@@ -1,7 +1,7 @@
 export type MicrovesiclesCSVInput = {
     /**
      * Data set identifier.
-     * Format is Antibody|Stimulation|Subject
+     * Format is Sample_Subject
      */
     'Data Set': string
     /** Gate identifier */
@@ -18,10 +18,12 @@ export type MicrovesiclesAlignedType = {
         Number: number[]
         '%Gated': number[]
         'Cells/μL': number[]
+        subject: string
     }
 }
 
 export type MicrovesiclesCalculatedMeansCSV = {
+    Subject: string
     'X Parameter': string
     MeanNumber: number
     'Mean%Gated': number

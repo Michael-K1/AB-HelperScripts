@@ -13,17 +13,20 @@ const parseCommaSeparatedNumber = (value: string): number => {
 }
 
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
+const unionCSV: MicrovesiclesCalculatedMeansCSV[] = []
 
 export const processVesiclesRow = (row: MicrovesiclesCSVInput) => {
     if (row.Gate === 'All') return // skip iteration`
 
     const xParam = row['X Parameter']
+    const subject = row['Data Set'].split('_').pop() ?? 'UNKNOWN'
 
     if (!(xParam in microvesiclesAligned)) {
         microvesiclesAligned[xParam] = {
             Number: [],
             '%Gated': [],
-            'Cells/μL': []
+            'Cells/μL': [],
+            subject
         }
     }
 
@@ -37,12 +40,15 @@ export const finalizeMicrovesiclesAlignment = async () => {
 
     for (const xParam in microvesiclesAligned) {
         const data = microvesiclesAligned[xParam]
-        outputCSV.push({
+        const newRow = {
+            Subject: data.subject,
             'X Parameter': xParam,
             MeanNumber: mean(data.Number),
             'Mean%Gated': mean(data['%Gated']),
             'MeanCells/μL': mean(data['Cells/μL'])
-        })
+        }
+        outputCSV.push(newRow)
+        unionCSV.push(newRow)
     }
 
     await writeCSV(getOutputDir(), getInputFile(), outputCSV)
@@ -50,3 +56,5 @@ export const finalizeMicrovesiclesAlignment = async () => {
     // Clear the data structure for the next file
     Object.keys(microvesiclesAligned).forEach((key) => delete microvesiclesAligned[key])
 }
+
+export const mergeSubjects = async () => await writeCSV(getOutputDir(), `merged_subjects.csv`, unionCSV)

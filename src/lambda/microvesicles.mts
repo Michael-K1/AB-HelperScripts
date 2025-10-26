@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
 import { getInputFiles, processFile } from '@/functions/csv.mjs'
 import { logger, configureLogger } from 'functions/utils/logger.mjs'
-import { finalizeMicrovesiclesAlignment, processVesiclesRow } from '@/functions/microvesicles.mjs'
+import { finalizeMicrovesiclesAlignment, mergeSubjects, processVesiclesRow } from '@/functions/microvesicles.mjs'
 import { setInputDir, setOutputDir, setInputFile, setShouldRename } from '@/functions/utils/options.mjs'
 
 export const handler = async () => {
@@ -77,7 +77,7 @@ export const handler = async () => {
             // Process file logic will go here
             await processFile<MicrovesiclesCSVInput>(processVesiclesRow, finalizeMicrovesiclesAlignment)
         }
-
+        await mergeSubjects()
         logger.timing.end('Main execution')
         logger.success(`Processing completed successfully`)
     } catch (error) {
