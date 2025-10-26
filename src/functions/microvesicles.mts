@@ -37,7 +37,6 @@ export const finalizeMicrovesiclesAlignment = async () => {
 
     for (const xParam in microvesiclesAligned) {
         const data = microvesiclesAligned[xParam]
-        console.log(xParam, data)
         outputCSV.push({
             'X Parameter': xParam,
             MeanNumber: mean(data.Number),
