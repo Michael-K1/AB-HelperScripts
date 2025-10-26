@@ -6,6 +6,7 @@ const IMPORTANT_TIMERS = ['Total', 'Main execution']
 const isImportantTimer = (label: string): boolean =>
     IMPORTANT_TIMERS.some((timer) => label.includes(timer) || label === timer)
 
+const TIMERS: Record<string, DateTime> = {}
 /**
  * Creates a logger with configurable verbosity
  *
@@ -31,24 +32,23 @@ export const createLogger = (verbose: boolean = false) => ({
             if (verbose || isImportantTimer(label)) {
                 console.time(chalk.cyan(`⏱️ [TIMING] ${label}`))
             }
-            return {
-                label,
-                startTime: DateTime.now()
-            }
+            TIMERS[label] = DateTime.now()
         },
-        end: (timer: { label: string; startTime: DateTime }) => {
-            const isProcessingTimer = timer.label.startsWith('Processing')
+        end: (label: string) => {
+            const startTime = TIMERS[label]
+            const isProcessingTimer = label.startsWith('Processing')
 
-            if (verbose || isImportantTimer(timer.label)) {
-                console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${timer.label}`))
-            } else if (isProcessingTimer) {
+            if (verbose || isImportantTimer(label)) {
+                console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${label}`))
+            } else if (isProcessingTimer && startTime) {
                 // For non-verbose mode, collect timing data without displaying
-                const elapsed = DateTime.now().diff(timer.startTime).milliseconds
-                // Use verbose since this is only for verbose mode
+                const elapsed = DateTime.now().diff(startTime).milliseconds
                 if (verbose) {
-                    console.log(chalk.gray(`[VERBOSE] ${timer.label} completed in ${elapsed.toFixed(0)}ms`))
+                    console.log(chalk.gray(`[VERBOSE] ${label} completed in ${elapsed.toFixed(0)}ms`))
                 }
             }
+            // Optionally clean up timer
+            delete TIMERS[label]
         }
     }
 })

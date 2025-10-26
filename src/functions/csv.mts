@@ -1,9 +1,11 @@
-import { createWriteStream, existsSync, mkdirSync } from 'node:fs'
+import { createReadStream, createWriteStream, existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { readdir, rename } from 'node:fs/promises'
 import chalk from 'chalk'
 import { format } from 'fast-csv'
 import { DateTime } from 'luxon'
+import * as csv from 'fast-csv'
+import { Row } from '@fast-csv/parse'
 import { logger } from 'functions/utils/logger.mjs'
 
 export const getInputFiles = async (inputDir: string): Promise<string[]> => {
@@ -60,14 +62,9 @@ export const writeCSV = (outputDir: string, file: string, analisys: unknown[]) =
  * @param totalFiles Total number of files to process
  * @returns Updated count of processed files
  */
-export const handleFileCompletion = async (
-    file: string,
-    inputDir: string,
-    shouldRename: boolean,
-    fileTimer: { label: string; startTime: DateTime }
-) => {
+export const handleFileCompletion = async (file: string, inputDir: string) => {
     // Rename the file if needed
-    if (shouldRename) {
+    if (getShouldRename()) {
         try {
             await rename(join(inputDir, file), join(inputDir, `DONE_${file}`))
             logger.success(`Renamed ${chalk.bold(file)} to ${chalk.bold(`DONE_${file}`)}`)
@@ -77,16 +74,47 @@ export const handleFileCompletion = async (
     }
 
     // End the file timer
-    logger.timing.end(fileTimer)
+    logger.timing.end(file)
 
     // Check if all files are processed and end the total timer if so
 }
 
-export const setInputDir = (dir?: string) => (process.env.INPUT_DIR = dir ?? 'input')
-export const getInputDir = (): string => process.env.INPUT_DIR ?? 'input'
+let _inputDir = 'input'
+export const setInputDir = (dir?: string) => {
+    _inputDir = dir ?? 'input'
+}
+export const getInputDir = (): string => _inputDir
 
-export const setOutputDir = (dir?: string) => (process.env.OUTPUT_DIR = dir ?? 'output')
-export const getOutputDir = (): string => process.env.OUTPUT_DIR ?? 'output'
+let _outputDir = 'output'
+export const setOutputDir = (dir?: string) => {
+    _outputDir = dir ?? 'output'
+}
+export const getOutputDir = (): string => _outputDir
 
-export const setInputFile = (file: string) => (process.env.INPUT_FILE = file)
-export const getInputFile = (): string => process.env.INPUT_FILE ?? `${DateTime.now().toISO()}`
+let _inputFile = `${DateTime.now().toISO()}`
+export const setInputFile = (file: string) => {
+    _inputFile = file
+}
+export const getInputFile = (): string => _inputFile
+
+let _shouldRename = true
+export const setShouldRename = (value: boolean) => {
+    _shouldRename = value
+}
+export const getShouldRename = (): boolean => _shouldRename
+export const processFile = async <T extends Row>(rowProcessor: (row: T) => void, finalizer: () => void) =>
+    createReadStream(resolve(getInputDir(), getInputFile()))
+        .pipe(
+            csv.parse<T, T[]>({
+                headers: true,
+                delimiter: ';',
+                trim: true
+            })
+        )
+        .on('error', (error: unknown) => logger.error(`Error processing file ${chalk.bold(getInputFile())}:`, error))
+        .on('data', rowProcessor)
+        .on('finish', finalizer)
+        .on('close', async () => {
+            // Use the refactored function to handle file completion
+            await handleFileCompletion(getInputFile(), getInputDir())
+        })

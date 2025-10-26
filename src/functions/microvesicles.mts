@@ -38,5 +38,5 @@ export const finalizeMicrovesiclesAlignment = () => {
         })
     }
 
-    writeCSV(`${getOutputDir()}/microvesicles`, `DONE_${getInputFile()}`, outputCSV)
+    writeCSV(`${getOutputDir()}`, `DONE_${getInputFile()}`, outputCSV)
 }

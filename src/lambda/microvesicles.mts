@@ -1,48 +1,10 @@
 import type { MicrovesiclesCSVInput } from '@/@types/microvesicles.mjs'
-import { createReadStream } from 'node:fs'
-import { resolve } from 'node:path'
-import * as csv from 'fast-csv'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
-import {
-    getInputDir,
-    getInputFile,
-    getInputFiles,
-    handleFileCompletion,
-    setInputDir,
-    setInputFile,
-    setOutputDir
-} from 'functions/csv.mjs'
+import { getInputFiles, processFile, setInputDir, setInputFile, setOutputDir } from '@/functions/csv.mjs'
 import { logger, configureLogger } from 'functions/utils/logger.mjs'
 import { finalizeMicrovesiclesAlignment, processVesiclesRow } from '@/functions/microvesicles.mjs'
-
-// Main function to process files
-const processFiles = async (file: string, shouldRename: boolean = true) => {
-    // Track when all files are processed for total timer
-    setInputFile(file)
-    const inputFile = file
-
-    const fileTimer = logger.timing.start(`Processing ${inputFile}`)
-    logger.info(`Processing file: ${chalk.bold(inputFile)}`)
-    // Process file logic will go here
-
-    createReadStream(resolve(getInputDir(), getInputFile()))
-        .pipe(
-            csv.parse<MicrovesiclesCSVInput, MicrovesiclesCSVInput[]>({
-                headers: true,
-                delimiter: ';',
-                trim: true
-            })
-        )
-        .on('error', (error) => logger.error(`Error processing file ${chalk.bold(inputFile)}:`, error))
-        .on('data', processVesiclesRow)
-        .on('finish', finalizeMicrovesiclesAlignment)
-        .on('close', async () => {
-            // Use the refactored function to handle file completion
-            await handleFileCompletion(inputFile, getInputDir(), shouldRename, fileTimer)
-        })
-}
 
 const main = async () => {
     // Parse command line arguments using yargs
@@ -103,11 +65,18 @@ const main = async () => {
         return
     }
 
-    const mainTimer = logger.timing.start('Main execution')
+    logger.timing.start('Main execution')
     try {
-        for (const file of inputFiles) await processFiles(file, shouldRename)
+        for (const file of inputFiles) {
+            setInputFile(file)
 
-        logger.timing.end(mainTimer)
+            logger.timing.start(file)
+            logger.info(`Processing file: ${chalk.bold(file)}`)
+            // Process file logic will go here
+            processFile<MicrovesiclesCSVInput>(processVesiclesRow, finalizeMicrovesiclesAlignment)
+        }
+
+        logger.timing.end('Main execution')
         logger.success(`Processing completed successfully`)
     } catch (error) {
         logger.error('An error occurred during processing:', error)
