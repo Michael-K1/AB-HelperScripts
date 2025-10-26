@@ -3,8 +3,14 @@ import type {
     MicrovesiclesAlignedType,
     MicrovesiclesCalculatedMeansCSV
 } from '@/@types/microvesicles.mjs'
+import { mean } from 'lodash-es'
 import { writeCSV } from '@/functions/csv.mjs'
 import { getOutputDir, getInputFile } from '@/functions/utils/options.mjs'
+
+const parseCommaSeparatedNumber = (value: string): number => {
+    // Replace comma with dot and parse as float
+    return parseFloat(value.replace(',', '.'))
+}
 
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
 
@@ -21,9 +27,9 @@ export const processVesiclesRow = (row: MicrovesiclesCSVInput) => {
         }
     }
 
-    microvesiclesAligned[xParam].Number.push(parseFloat(row.Number))
-    microvesiclesAligned[xParam]['%Gated'].push(parseFloat(row['%Gated']))
-    microvesiclesAligned[xParam]['Cells/μL'].push(parseFloat(row['Cells/μL']))
+    microvesiclesAligned[xParam].Number.push(parseCommaSeparatedNumber(row.Number))
+    microvesiclesAligned[xParam]['%Gated'].push(parseCommaSeparatedNumber(row['%Gated']))
+    microvesiclesAligned[xParam]['Cells/μL'].push(parseCommaSeparatedNumber(row['Cells/μL']))
 }
 
 export const finalizeMicrovesiclesAlignment = async () => {
@@ -31,11 +37,12 @@ export const finalizeMicrovesiclesAlignment = async () => {
 
     for (const xParam in microvesiclesAligned) {
         const data = microvesiclesAligned[xParam]
+        console.log(xParam, data)
         outputCSV.push({
             'X Parameter': xParam,
-            MeanNumber: data.Number.reduce((a, b) => a + b, 0) / data.Number.length,
-            'Mean%Gated': data['%Gated'].reduce((a, b) => a + b, 0) / data['%Gated'].length,
-            'MeanCells/μL': data['Cells/μL'].reduce((a, b) => a + b, 0) / data['Cells/μL'].length
+            MeanNumber: mean(data.Number),
+            'Mean%Gated': mean(data['%Gated']),
+            'MeanCells/μL': mean(data['Cells/μL'])
         })
     }
 
