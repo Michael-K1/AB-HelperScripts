@@ -75,7 +75,7 @@ export const handler = async () => {
             logger.timing.start(file)
             logger.info(`Processing file: ${chalk.bold(file)}`)
             // Process file logic will go here
-            processFile<MicrovesiclesCSVInput>(processVesiclesRow, finalizeMicrovesiclesAlignment)
+            await processFile<MicrovesiclesCSVInput>(processVesiclesRow, finalizeMicrovesiclesAlignment)
         }
 
         logger.timing.end('Main execution')

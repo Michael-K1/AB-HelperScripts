@@ -92,7 +92,7 @@ export const handler = async () => {
             logger.timing.start(file)
             logger.info(`Processing file: ${chalk.bold(file)}`)
             // Process file logic here
-            processFile<kaluzaCSVInput>(processKaluzaRow, finalizeKaluzaAlignment)
+            await processFile<kaluzaCSVInput>(processKaluzaRow, finalizeKaluzaAlignment)
         }
 
         logger.timing.end('Main execution')

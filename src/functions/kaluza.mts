@@ -45,13 +45,13 @@ export const processKaluzaRow = (row: kaluzaCSVInput) => {
     kaluzaAligned[dataSet]['X-GMean'] = kaluzaAligned[dataSet]['X-GMean'] ?? row['X-GMean']
 }
 
-export const finalizeKaluzaAlignment = () => {
+export const finalizeKaluzaAlignment = async () => {
     // First write the aligned data
     const alignedRows = Object.values(kaluzaAligned)
     const inputFile = getInputFile()
     const outputDir = getOutputDir()
 
-    writeCSV(outputDir, `aligned_${inputFile}`, alignedRows)
+    await writeCSV(outputDir, `aligned_${inputFile}`, alignedRows)
     logger.info(`Processing merged data for ${chalk.bold(inputFile)}...`)
 
     // Process the merged data

@@ -26,7 +26,7 @@ export const processVesiclesRow = (row: MicrovesiclesCSVInput) => {
     microvesiclesAligned[xParam]['Cells/μL'].push(parseFloat(row['Cells/μL']))
 }
 
-export const finalizeMicrovesiclesAlignment = () => {
+export const finalizeMicrovesiclesAlignment = async () => {
     const outputCSV: MicrovesiclesCalculatedMeansCSV[] = []
 
     for (const xParam in microvesiclesAligned) {
@@ -39,5 +39,8 @@ export const finalizeMicrovesiclesAlignment = () => {
         })
     }
 
-    writeCSV(`${getOutputDir()}`, `DONE_${getInputFile()}`, outputCSV)
+    await writeCSV(getOutputDir(), getInputFile(), outputCSV)
+
+    // Clear the data structure for the next file
+    Object.keys(microvesiclesAligned).forEach((key) => delete microvesiclesAligned[key])
 }

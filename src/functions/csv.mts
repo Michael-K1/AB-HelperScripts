@@ -26,28 +26,36 @@ export const getInputFiles = async (inputDir: string): Promise<string[]> => {
     }
 }
 
-export const writeCSV = (outputDir: string, file: string, analisys: unknown[]) => {
-    // Check if output directory exists, create it if it doesn't
-    if (!existsSync(outputDir)) {
-        logger.info(`Creating output directory: ${chalk.cyan(outputDir)}`)
-        mkdirSync(outputDir, { recursive: true })
-    }
+export const writeCSV = (outputDir: string, file: string, analisys: unknown[]): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        // Check if output directory exists, create it if it doesn't
+        if (!existsSync(outputDir)) {
+            logger.info(`Creating output directory: ${chalk.cyan(outputDir)}`)
+            mkdirSync(outputDir, { recursive: true })
+        }
 
-    logger.info(`Writing ${chalk.bold(analisys.length)} merged rows to CSV`)
-    const csvStream = format({
-        headers: true,
-        delimiter: ';'
+        logger.info(`Writing ${chalk.bold(analisys.length)} merged rows to CSV`)
+        const csvStream = format({
+            headers: true,
+            delimiter: ';'
+        })
+        const outputFilePath = join(outputDir, file)
+        const writeStream = createWriteStream(outputFilePath)
+
+        writeStream.on('error', reject)
+        writeStream.on('finish', resolve)
+
+        csvStream.pipe(writeStream)
+
+        const entriesCount = analisys.length
+        logger.info(`Writing ${chalk.bold(entriesCount)} entries to ${chalk.bold(file)}`)
+
+        for (const element of analisys) {
+            csvStream.write(element)
+        }
+
+        csvStream.end()
     })
-    const outputFilePath = join(outputDir, file)
-    const writeStream = createWriteStream(outputFilePath)
-    csvStream.pipe(writeStream)
-
-    const entriesCount = analisys.length
-    logger.info(`Writing ${chalk.bold(entriesCount)} entries to ${chalk.bold(file)}`)
-
-    for (const element of analisys) csvStream.write(element)
-
-    csvStream.end()
 }
 
 /**
@@ -79,19 +87,32 @@ export const handleFileCompletion = async (file: string, inputDir: string) => {
     // Check if all files are processed and end the total timer if so
 }
 
-export const processFile = async <T extends Row>(rowProcessor: (row: T) => void, finalizer: () => void) =>
-    createReadStream(resolve(getInputDir(), getInputFile()))
-        .pipe(
-            csv.parse<T, T[]>({
-                headers: true,
-                delimiter: ';',
-                trim: true
+export const processFile = async <T extends Row>(
+    rowProcessor: (row: T) => void,
+    finalizer: () => void | Promise<void>
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        createReadStream(join(getInputDir(), getInputFile()))
+            .pipe(
+                csv.parse<T, T[]>({
+                    headers: true,
+                    delimiter: ';',
+                    trim: true
+                })
+            )
+            .on('error', (error: unknown) => {
+                logger.error(`Error processing file ${chalk.bold(getInputFile())}:`, error)
+                reject(error)
             })
-        )
-        .on('error', (error: unknown) => logger.error(`Error processing file ${chalk.bold(getInputFile())}:`, error))
-        .on('data', rowProcessor)
-        .on('finish', finalizer)
-        .on('close', async () => {
-            // Use the refactored function to handle file completion
-            await handleFileCompletion(getInputFile(), getInputDir())
-        })
+            .on('data', rowProcessor)
+            .on('end', async () => {
+                try {
+                    await Promise.resolve(finalizer())
+                    await handleFileCompletion(getInputFile(), getInputDir())
+                    resolve()
+                } catch (error) {
+                    reject(error)
+                }
+            })
+    })
+}
