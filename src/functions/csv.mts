@@ -81,3 +81,12 @@ export const handleFileCompletion = async (
 
     // Check if all files are processed and end the total timer if so
 }
+
+export const setInputDir = (dir?: string) => (process.env.INPUT_DIR = dir ?? 'input')
+export const getInputDir = (): string => process.env.INPUT_DIR ?? 'input'
+
+export const setOutputDir = (dir?: string) => (process.env.OUTPUT_DIR = dir ?? 'output')
+export const getOutputDir = (): string => process.env.OUTPUT_DIR ?? 'output'
+
+export const setInputFile = (file: string) => (process.env.INPUT_FILE = file)
+export const getInputFile = (): string => process.env.INPUT_FILE ?? `${DateTime.now().toISO()}`

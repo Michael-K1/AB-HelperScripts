@@ -1,0 +1,118 @@
+import type { MicrovesiclesCSVInput } from '@/@types/microvesicles.mjs'
+import { createReadStream } from 'node:fs'
+import { resolve } from 'node:path'
+import * as csv from 'fast-csv'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import chalk from 'chalk'
+import {
+    getInputDir,
+    getInputFile,
+    getInputFiles,
+    handleFileCompletion,
+    setInputDir,
+    setInputFile,
+    setOutputDir
+} from 'functions/csv.mjs'
+import { logger, configureLogger } from 'functions/utils/logger.mjs'
+import { finalizeMicrovesiclesAlignment, processVesiclesRow } from '@/functions/microvesicles.mjs'
+
+// Main function to process files
+const processFiles = async (file: string, shouldRename: boolean = true) => {
+    // Track when all files are processed for total timer
+    setInputFile(file)
+    const inputFile = file
+
+    const fileTimer = logger.timing.start(`Processing ${inputFile}`)
+    logger.info(`Processing file: ${chalk.bold(inputFile)}`)
+    // Process file logic will go here
+
+    createReadStream(resolve(getInputDir(), getInputFile()))
+        .pipe(
+            csv.parse<MicrovesiclesCSVInput, MicrovesiclesCSVInput[]>({
+                headers: true,
+                delimiter: ';',
+                trim: true
+            })
+        )
+        .on('error', (error) => logger.error(`Error processing file ${chalk.bold(inputFile)}:`, error))
+        .on('data', processVesiclesRow)
+        .on('finish', finalizeMicrovesiclesAlignment)
+        .on('close', async () => {
+            // Use the refactored function to handle file completion
+            await handleFileCompletion(inputFile, getInputDir(), shouldRename, fileTimer)
+        })
+}
+
+const main = async () => {
+    // Parse command line arguments using yargs
+    const argv = yargs(hideBin(process.argv))
+        .option('input-dir', {
+            alias: 'i',
+            description: 'Input directory containing CSV files',
+            type: 'string',
+            default: 'input/microvesicles'
+        })
+        .option('output-dir', {
+            alias: 'o',
+            description: 'Output directory for processed CSV files',
+            type: 'string',
+            default: 'output/microvesicles'
+        })
+        .option('disable-rename', {
+            description: 'Do not rename processed files with DONE_ prefix',
+            type: 'boolean',
+            default: false
+        })
+        .option('verbose', {
+            alias: 'v',
+            description: 'Show detailed timing and processing information',
+            type: 'boolean',
+            default: false
+        })
+        .help()
+        .alias('help', 'h')
+        .example('$0 --filter "bianco,Alexa"', 'Filter out datasets containing bianco or Alexa')
+        .example('$0 -f "bianco,Alexa" -i custom-input -o custom-output', 'Use custom input/output directories')
+        .version(false)
+        .parseSync()
+
+    // Get input/output directories, rename option and verbose flag
+    setInputDir(argv['input-dir'] as string)
+    setOutputDir(argv['output-dir'] as string)
+
+    const inputDir = argv['input-dir'] as string
+    const outputDir = argv['output-dir'] as string
+    const shouldRename = !(argv['disable-rename'] as boolean)
+    const isVerbose = argv['verbose'] as boolean
+
+    // Re-initialize logger with verbose setting
+    configureLogger(isVerbose)
+
+    logger.info(`${chalk.bold('Configuration:')}`)
+
+    logger.info(`  • Input directory: ${chalk.cyan()}`)
+    logger.info(`  • Output directory: ${chalk.cyan(outputDir)}`)
+    logger.info(`  • File renaming: ${shouldRename ? chalk.green('enabled') : chalk.yellow('disabled')}`)
+    logger.info(`  • Verbose logging: ${isVerbose ? chalk.green('enabled') : chalk.gray('disabled')}`)
+
+    const inputFiles = await getInputFiles(inputDir)
+
+    if (inputFiles.length === 0) {
+        logger.warn('No files to process.')
+        return
+    }
+
+    const mainTimer = logger.timing.start('Main execution')
+    try {
+        for (const file of inputFiles) await processFiles(file, shouldRename)
+
+        logger.timing.end(mainTimer)
+        logger.success(`Processing completed successfully`)
+    } catch (error) {
+        logger.error('An error occurred during processing:', error)
+        process.exit(1)
+    }
+}
+
+await main()
