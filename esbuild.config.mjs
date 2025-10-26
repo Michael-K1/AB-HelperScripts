@@ -4,7 +4,7 @@ import { build } from 'esbuild'
 
 // Automatically find all handlers in src/lambda
 const entries = readdirSync('src/lambda')
-    .filter((file) => file.endsWith('.mts'))
+    .filter((file) => file.endsWith('main.mts'))
     .map((file) => ({
         entryPoints: [`src/lambda/${file}`],
         outfile: `build/${file.split('.')[0]}/${file.replace(/\.mts$/, '.mjs')}`
