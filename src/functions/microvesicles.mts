@@ -1,7 +1,8 @@
 import type {
     MicrovesiclesCSVInput,
     MicrovesiclesAlignedType,
-    MicrovesiclesCalculatedMeansCSV
+    MicrovesiclesCalculatedMeansCSV,
+    MicrovesiclesUnionCSV
 } from '@/@types/microvesicles.mjs'
 import { mean } from 'lodash-es'
 import { writeCSV } from '@/functions/csv.mjs'
@@ -13,13 +14,13 @@ const parseCommaSeparatedNumber = (value: string): number => {
 }
 
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
-const unionCSV: MicrovesiclesCalculatedMeansCSV[] = []
+const unionCSV: MicrovesiclesUnionCSV[] = []
 
 export const processVesiclesRow = (row: MicrovesiclesCSVInput) => {
     if (row.Gate === 'All') return // skip iteration`
 
     const xParam = row['X Parameter']
-    const subject = row['Data Set'].split('_').pop() ?? 'UNKNOWN'
+    const subject = (row['Data Set'].split('_').pop() ?? 'UNKNOWN').padStart(4, '0')
 
     if (!(xParam in microvesiclesAligned)) {
         microvesiclesAligned[xParam] = {
@@ -48,7 +49,7 @@ export const finalizeMicrovesiclesAlignment = async () => {
             'MeanCells/μL': mean(data['Cells/μL'])
         }
         outputCSV.push(newRow)
-        unionCSV.push(newRow)
+        unionCSV.push({ ...newRow, sourceFile: getInputFile() })
     }
 
     await writeCSV(getOutputDir(), getInputFile(), outputCSV)

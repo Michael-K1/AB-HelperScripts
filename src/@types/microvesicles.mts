@@ -29,3 +29,7 @@ export type MicrovesiclesCalculatedMeansCSV = {
     'Mean%Gated': number
     'MeanCells/μL': number
 }
+
+export type MicrovesiclesUnionCSV = MicrovesiclesCalculatedMeansCSV & {
+    sourceFile: string
+}
