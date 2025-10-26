@@ -64,14 +64,8 @@ export const handleFileCompletion = async (
     file: string,
     inputDir: string,
     shouldRename: boolean,
-    fileTimer: { label: string; startTime: DateTime },
-    totalTimer: { label: string; startTime: DateTime },
-    filesProcessed: number,
-    totalFiles: number
-): Promise<number> => {
-    // Increment processed count
-    const newFilesProcessed = filesProcessed + 1
-
+    fileTimer: { label: string; startTime: DateTime }
+) => {
     // Rename the file if needed
     if (shouldRename) {
         try {
@@ -86,9 +80,4 @@ export const handleFileCompletion = async (
     logger.timing.end(fileTimer)
 
     // Check if all files are processed and end the total timer if so
-    if (newFilesProcessed === totalFiles) {
-        logger.timing.end(totalTimer)
-    }
-
-    return newFilesProcessed
 }
