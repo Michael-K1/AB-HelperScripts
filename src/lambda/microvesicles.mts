@@ -7,7 +7,7 @@ import { logger, configureLogger } from 'functions/utils/logger.mjs'
 import { finalizeMicrovesiclesAlignment, processVesiclesRow } from '@/functions/microvesicles.mjs'
 import { setInputDir, setOutputDir, setInputFile, setShouldRename } from '@/functions/utils/options.mjs'
 
-const main = async () => {
+export const handler = async () => {
     // Parse command line arguments using yargs
     const argv = yargs(hideBin(process.argv))
         .option('input-dir', {
@@ -85,5 +85,3 @@ const main = async () => {
         process.exit(1)
     }
 }
-
-await main()

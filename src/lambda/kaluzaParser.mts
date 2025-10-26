@@ -13,7 +13,7 @@ import {
     setDataSetFilter
 } from '@/functions/utils/options.mjs'
 
-const main = async () => {
+export const handler = async () => {
     // Parse command line arguments using yargs
     const argv = yargs(hideBin(process.argv))
         .option('filter', {
@@ -102,5 +102,3 @@ const main = async () => {
         process.exit(1)
     }
 }
-
-await main()
