@@ -3,7 +3,8 @@ import type {
     MicrovesiclesAlignedType,
     MicrovesiclesCalculatedMeansCSV
 } from '@/@types/microvesicles.mjs'
-import { getInputFile, getOutputDir, writeCSV } from './csv.mjs'
+import { writeCSV } from '@/functions/csv.mjs'
+import { getOutputDir, getInputFile } from '@/functions/utils/options.mjs'
 
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
 

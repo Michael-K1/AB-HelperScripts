@@ -3,10 +3,10 @@ import { join, resolve } from 'node:path'
 import { readdir, rename } from 'node:fs/promises'
 import chalk from 'chalk'
 import { format } from 'fast-csv'
-import { DateTime } from 'luxon'
 import * as csv from 'fast-csv'
 import { Row } from '@fast-csv/parse'
 import { logger } from 'functions/utils/logger.mjs'
+import { getShouldRename, getInputDir, getInputFile } from '@/functions/utils/options.mjs'
 
 export const getInputFiles = async (inputDir: string): Promise<string[]> => {
     // Check if input directory exists
@@ -79,29 +79,6 @@ export const handleFileCompletion = async (file: string, inputDir: string) => {
     // Check if all files are processed and end the total timer if so
 }
 
-let _inputDir = 'input'
-export const setInputDir = (dir?: string) => {
-    _inputDir = dir ?? 'input'
-}
-export const getInputDir = (): string => _inputDir
-
-let _outputDir = 'output'
-export const setOutputDir = (dir?: string) => {
-    _outputDir = dir ?? 'output'
-}
-export const getOutputDir = (): string => _outputDir
-
-let _inputFile = `${DateTime.now().toISO()}`
-export const setInputFile = (file: string) => {
-    _inputFile = file
-}
-export const getInputFile = (): string => _inputFile
-
-let _shouldRename = true
-export const setShouldRename = (value: boolean) => {
-    _shouldRename = value
-}
-export const getShouldRename = (): boolean => _shouldRename
 export const processFile = async <T extends Row>(rowProcessor: (row: T) => void, finalizer: () => void) =>
     createReadStream(resolve(getInputDir(), getInputFile()))
         .pipe(

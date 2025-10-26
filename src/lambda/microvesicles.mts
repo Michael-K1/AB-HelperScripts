@@ -2,9 +2,10 @@ import type { MicrovesiclesCSVInput } from '@/@types/microvesicles.mjs'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import chalk from 'chalk'
-import { getInputFiles, processFile, setInputDir, setInputFile, setOutputDir } from '@/functions/csv.mjs'
+import { getInputFiles, processFile } from '@/functions/csv.mjs'
 import { logger, configureLogger } from 'functions/utils/logger.mjs'
 import { finalizeMicrovesiclesAlignment, processVesiclesRow } from '@/functions/microvesicles.mjs'
+import { setInputDir, setOutputDir, setInputFile, setShouldRename } from '@/functions/utils/options.mjs'
 
 const main = async () => {
     // Parse command line arguments using yargs
@@ -42,6 +43,7 @@ const main = async () => {
     // Get input/output directories, rename option and verbose flag
     setInputDir(argv['input-dir'] as string)
     setOutputDir(argv['output-dir'] as string)
+    setShouldRename(!(argv['disable-rename'] as boolean))
 
     const inputDir = argv['input-dir'] as string
     const outputDir = argv['output-dir'] as string
