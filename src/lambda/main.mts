@@ -79,7 +79,7 @@ const displayMenu = async (rl: ReturnType<typeof createInterface>): Promise<Lamb
 }
 
 const handleProcessorOptions = async (selectedLambda: LambdaType, rl: ReturnType<typeof createInterface>) => {
-    console.log(chalk.dim('\n─'.repeat(30)))
+    console.log(chalk.dim('\n─'.repeat(5)))
     console.log(chalk.bold('\nProcessor Configuration:'))
 
     // Get common options interactively

@@ -5,7 +5,15 @@ import chalk from 'chalk'
 import { getInputFiles, processFile } from '@/functions/csv.mjs'
 import { logger, configureLogger } from 'functions/utils/logger.mjs'
 import { finalizeMicrovesiclesAlignment, mergeSubjects, processVesiclesRow } from '@/functions/microvesicles.mjs'
-import { setInputDir, setOutputDir, setInputFile, setShouldRename } from '@/functions/utils/options.mjs'
+import {
+    setInputDir,
+    setOutputDir,
+    setInputFile,
+    setShouldRename,
+    getOutputDir,
+    getInputDir,
+    getShouldRename
+} from '@/functions/utils/options.mjs'
 
 export const handler = async () => {
     // Parse command line arguments using yargs
@@ -45,9 +53,9 @@ export const handler = async () => {
     setOutputDir(argv['output-dir'] as string)
     setShouldRename(!(argv['disable-rename'] as boolean))
 
-    const inputDir = argv['input-dir'] as string
-    const outputDir = argv['output-dir'] as string
-    const shouldRename = !(argv['disable-rename'] as boolean)
+    const inputDir = getInputDir()
+    const outputDir = getOutputDir()
+    const shouldRename = getShouldRename()
     const isVerbose = argv['verbose'] as boolean
 
     // Re-initialize logger with verbose setting
@@ -80,6 +88,7 @@ export const handler = async () => {
         await mergeSubjects()
         logger.timing.end('Main execution')
         logger.success(`Processing completed successfully`)
+        logger.success(`Find the results in ${chalk.bold(outputDir)}`)
     } catch (error) {
         logger.error('An error occurred during processing:', error)
         process.exit(1)
