@@ -13,6 +13,11 @@ const parseCommaSeparatedNumber = (value: string): number => {
     return parseFloat(value.replace(',', '.'))
 }
 
+const formatNumberWithComma = (value: number): string => {
+    // Convert number to string with fixed decimal places and replace dot with comma
+    return value.toFixed(3).replace('.', ',')
+}
+
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
 const unionCSV: MicrovesiclesUnionCSV[] = []
 
@@ -44,9 +49,9 @@ export const finalizeMicrovesiclesAlignment = async () => {
         const newRow = {
             Subject: data.subject,
             'X Parameter': xParam,
-            MeanNumber: mean(data.Number),
-            'Mean%Gated': mean(data['%Gated']),
-            'MeanCells/μL': mean(data['Cells/μL'])
+            MeanNumber: formatNumberWithComma(mean(data.Number)),
+            'Mean%Gated': formatNumberWithComma(mean(data['%Gated'])),
+            'MeanCells/μL': formatNumberWithComma(mean(data['Cells/μL']))
         }
         outputCSV.push(newRow)
         unionCSV.push({ ...newRow, sourceFile: getInputFile() })

@@ -25,9 +25,9 @@ export type MicrovesiclesAlignedType = {
 export type MicrovesiclesCalculatedMeansCSV = {
     Subject: string
     'X Parameter': string
-    MeanNumber: number
-    'Mean%Gated': number
-    'MeanCells/μL': number
+    MeanNumber: string
+    'Mean%Gated': string
+    'MeanCells/μL': string
 }
 
 export type MicrovesiclesUnionCSV = MicrovesiclesCalculatedMeansCSV & {
