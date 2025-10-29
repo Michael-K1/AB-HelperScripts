@@ -6,7 +6,11 @@ import { setInputFile } from '../utils/options.mjs'
 /**
  * Processes files using the provided processor configuration
  */
-export async function processFiles(files: string[], config: ProcessorConfig, options: ProcessorOptions): Promise<void> {
+export async function processFiles<T>(
+    files: string[],
+    config: ProcessorConfig<T>,
+    options: ProcessorOptions
+): Promise<void> {
     if (files.length === 0) {
         logger.warn('No files to process.')
         return

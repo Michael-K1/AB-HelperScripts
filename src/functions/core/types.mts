@@ -15,8 +15,8 @@ export interface ProcessorOptions {
     [key: string]: unknown
 }
 
-export interface ProcessorConfig extends ProcessorCliConfig {
-    processRow: <T>(row: T) => Promise<unknown>
-    finalizeAlignment?: () => Promise<void>
-    postProcess?: () => Promise<void>
+export interface ProcessorConfig<T = unknown> extends ProcessorCliConfig {
+    processRow: (row: T) => Promise<void> | void
+    finalizeAlignment?: () => Promise<void> | void
+    postProcess?: () => Promise<void> | void
 }
