@@ -1,6 +1,16 @@
 import type { Arguments } from 'yargs'
 import type { ProcessorOptions } from './types.mjs'
-import { CliOption, setInputDir, setOutputDir, setShouldRename, setDecimalPrecision } from '../utils/options.mjs'
+import {
+    CliOption,
+    setInputDir,
+    setOutputDir,
+    setShouldRename,
+    setDecimalPrecision,
+    getInputDir,
+    getOutputDir,
+    getShouldRename,
+    getDecimalPrecision
+} from '../utils/options.mjs'
 
 /**
  * Sets up common configuration from CLI arguments
@@ -18,9 +28,10 @@ export function setupCommonConfig(argv: Arguments): ProcessorOptions {
 
     // Return consolidated options
     return {
-        inputDir: argv[CliOption.InputDir] as string,
-        outputDir: argv[CliOption.OutputDir] as string,
-        disableRename: argv[CliOption.DisableRename] as boolean,
-        verbose: argv[CliOption.Verbose] as boolean
+        inputDir: getInputDir(),
+        outputDir: getOutputDir(),
+        disableRename: getShouldRename(),
+        verbose: argv[CliOption.Verbose] as boolean,
+        [CliOption.DecimalPrecision]: getDecimalPrecision()
     }
 }

@@ -15,7 +15,9 @@ export interface ProcessorOptions {
     [key: string]: unknown
 }
 
-export interface ProcessorConfig<T = unknown> extends ProcessorCliConfig {
+import type { Row } from '@fast-csv/parse'
+
+export interface ProcessorConfig<T extends Row = Row> extends ProcessorCliConfig {
     processRow: (row: T) => Promise<void> | void
     finalizeAlignment?: () => Promise<void> | void
     postProcess?: () => Promise<void> | void

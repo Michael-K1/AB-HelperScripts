@@ -1,12 +1,14 @@
 import type { ProcessorConfig, ProcessorOptions } from './types.mjs'
+import type { Row } from '@fast-csv/parse'
 import chalk from 'chalk'
-import { logger } from '../utils/logger.mjs'
-import { setInputFile } from '../utils/options.mjs'
+import { logger } from '@/functions/utils/logger.mjs'
+import { setInputFile } from '@/functions/utils/options.mjs'
+import { processFile } from '@/functions/csv.mjs'
 
 /**
  * Processes files using the provided processor configuration
  */
-export async function processFiles<T>(
+export async function processFiles<T extends Row>(
     files: string[],
     config: ProcessorConfig<T>,
     options: ProcessorOptions
@@ -17,6 +19,7 @@ export async function processFiles<T>(
     }
 
     logger.timing.start('Main execution')
+    logger.info(`Found ${files.length} files that need processing`)
 
     try {
         for (const file of files) {
@@ -24,10 +27,13 @@ export async function processFiles<T>(
             logger.timing.start(file)
             logger.info(`Processing file: ${chalk.bold(file)}`)
 
-            // Process file using the provided processor
-            if (config.finalizeAlignment) {
-                await config.finalizeAlignment()
+            // Process the file using the csv module's processFile function
+            if (!config.processRow) {
+                logger.error('No Row Processor found!')
             }
+            await processFile<T>(config.processRow, () =>
+                config.finalizeAlignment ? config.finalizeAlignment() : Promise.resolve()
+            )
         }
 
         // Run post-processing if defined
