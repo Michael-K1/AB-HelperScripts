@@ -29,3 +29,9 @@ export const setShouldRename = (value: boolean) => {
     _shouldRename = value
 }
 export const getShouldRename = (): boolean => _shouldRename
+
+let _decimalPrecision = 3
+export const setDecimalPrecision = (value?: number) => {
+    _decimalPrecision = value ?? 3
+}
+export const getDecimalPrecision = (): number => _decimalPrecision

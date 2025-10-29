@@ -10,7 +10,7 @@ export type MicrovesiclesCSVInput = {
     Number: string
     /** Percentage of gated cells (as string representation of a number) */
     '%Gated': string
-    'Cells/μL': string
+    'Cells/μL'?: string
 }
 
 export type MicrovesiclesAlignedType = {
@@ -27,7 +27,7 @@ export type MicrovesiclesCalculatedMeansCSV = {
     'X Parameter': string
     MeanNumber: string
     'Mean%Gated': string
-    'MeanCells/μL': string
+    'MeanCells/μL'?: string
 }
 
 export type MicrovesiclesUnionCSV = MicrovesiclesCalculatedMeansCSV & {

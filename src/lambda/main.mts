@@ -5,6 +5,9 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { logger } from '../functions/utils/logger.mjs'
 
+// Constants
+const DECIMAL_PRECISION_OPTION = 'decimal-precision'
+
 // Import all lambda handlers
 const lambdas = {
     kaluza: () => import('./kaluzaParser.mjs'),
@@ -34,6 +37,17 @@ interface CommonOptions {
     'output-dir'?: string
     'disable-rename'?: boolean
     verbose?: boolean
+    [DECIMAL_PRECISION_OPTION]?: number
+}
+
+const getNumberInput = async (
+    rl: ReturnType<typeof createInterface>,
+    question: string,
+    defaultValue: number
+): Promise<number> => {
+    const answer = await interactivePrompt(rl, question, defaultValue.toString())
+    const num = parseInt(answer)
+    return isNaN(num) ? defaultValue : num
 }
 
 const getCommonOptions = async (rl: ReturnType<typeof createInterface>, defaults: Partial<CommonOptions> = {}) => {
@@ -41,7 +55,12 @@ const getCommonOptions = async (rl: ReturnType<typeof createInterface>, defaults
         'input-dir': await interactivePrompt(rl, 'Input directory', defaults['input-dir']),
         'output-dir': await interactivePrompt(rl, 'Output directory', defaults['output-dir']),
         'disable-rename': !(await getBooleanInput(rl, 'Enable file renaming', !defaults['disable-rename'])),
-        verbose: await getBooleanInput(rl, 'Enable verbose logging', defaults['verbose'])
+        verbose: await getBooleanInput(rl, 'Enable verbose logging', defaults['verbose']),
+        [DECIMAL_PRECISION_OPTION]: await getNumberInput(
+            rl,
+            'Decimal precision',
+            defaults[DECIMAL_PRECISION_OPTION] ?? 3
+        )
     }
     return options
 }
@@ -105,6 +124,8 @@ const handleProcessorOptions = async (selectedLambda: LambdaType, rl: ReturnType
     if (options['output-dir']) process.argv.push('--output-dir', options['output-dir'])
     if (options['disable-rename']) process.argv.push('--disable-rename')
     if (options['verbose']) process.argv.push('--verbose')
+    if (options[DECIMAL_PRECISION_OPTION])
+        process.argv.push(`--${DECIMAL_PRECISION_OPTION}`, options[DECIMAL_PRECISION_OPTION].toString())
 }
 
 const main = async () => {

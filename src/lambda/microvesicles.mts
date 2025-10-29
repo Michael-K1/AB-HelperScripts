@@ -10,9 +10,11 @@ import {
     setOutputDir,
     setInputFile,
     setShouldRename,
+    setDecimalPrecision,
     getOutputDir,
     getInputDir,
-    getShouldRename
+    getShouldRename,
+    getDecimalPrecision
 } from '@/functions/utils/options.mjs'
 
 export const handler = async () => {
@@ -41,6 +43,12 @@ export const handler = async () => {
             type: 'boolean',
             default: false
         })
+        .option('decimal-precision', {
+            alias: 'dp',
+            description: 'Number of decimal places for numeric values',
+            type: 'number',
+            default: 3
+        })
         .help()
         .alias('help', 'h')
         .example('$0 --filter "bianco,Alexa"', 'Filter out datasets containing bianco or Alexa')
@@ -52,11 +60,13 @@ export const handler = async () => {
     setInputDir(argv['input-dir'] as string)
     setOutputDir(argv['output-dir'] as string)
     setShouldRename(!(argv['disable-rename'] as boolean))
+    setDecimalPrecision(argv['decimal-precision'] as number)
 
     const inputDir = getInputDir()
     const outputDir = getOutputDir()
     const shouldRename = getShouldRename()
     const isVerbose = argv['verbose'] as boolean
+    const decimalPrecision = getDecimalPrecision()
 
     // Re-initialize logger with verbose setting
     configureLogger(isVerbose)
@@ -67,6 +77,7 @@ export const handler = async () => {
     logger.info(`  • Output directory: ${chalk.cyan(outputDir)}`)
     logger.info(`  • File renaming: ${shouldRename ? chalk.green('enabled') : chalk.yellow('disabled')}`)
     logger.info(`  • Verbose logging: ${isVerbose ? chalk.green('enabled') : chalk.gray('disabled')}`)
+    logger.info(`  • Decimal precision: ${chalk.cyan(decimalPrecision)}`)
 
     const inputFiles = await getInputFiles(inputDir)
 

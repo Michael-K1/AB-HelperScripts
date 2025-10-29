@@ -7,16 +7,7 @@ import type {
 import { mean } from 'lodash-es'
 import { writeCSV } from '@/functions/csv.mjs'
 import { getOutputDir, getInputFile } from '@/functions/utils/options.mjs'
-
-const parseCommaSeparatedNumber = (value: string): number => {
-    // Replace comma with dot and parse as float
-    return parseFloat(value.replace(',', '.'))
-}
-
-const formatNumberWithComma = (value: number): string => {
-    // Convert number to string with fixed decimal places and replace dot with comma
-    return value.toFixed(3).replace('.', ',')
-}
+import { parseCommaSeparatedNumber, formatNumberWithComma } from '@/functions/utils/helpers.mjs'
 
 const microvesiclesAligned: MicrovesiclesAlignedType = {}
 const unionCSV: MicrovesiclesUnionCSV[] = []
