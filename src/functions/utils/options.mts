@@ -1,5 +1,15 @@
 import { DateTime } from 'luxon'
 
+export enum CliOption {
+    InputDir = 'input-dir',
+    OutputDir = 'output-dir',
+    DisableRename = 'disable-rename',
+    Verbose = 'verbose',
+    DecimalPrecision = 'decimal-precision',
+    NonInteractive = 'non-interactive',
+    Processor = 'processor'
+}
+
 let _dataSetFilter: string[] = []
 export const setDataSetFilter = (filter?: string) => {
     _dataSetFilter = filter ? filter.split(',').map((item) => item.trim()) : []

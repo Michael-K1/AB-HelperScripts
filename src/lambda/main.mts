@@ -4,9 +4,7 @@ import chalk from 'chalk'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { logger } from '../functions/utils/logger.mjs'
-
-// Constants
-const DECIMAL_PRECISION_OPTION = 'decimal-precision'
+import { CliOption } from '../functions/utils/options.mjs'
 
 // Import all lambda handlers
 const lambdas = {
@@ -33,11 +31,11 @@ const getBooleanInput = async (
 }
 
 interface CommonOptions {
-    'input-dir'?: string
-    'output-dir'?: string
-    'disable-rename'?: boolean
-    verbose?: boolean
-    [DECIMAL_PRECISION_OPTION]?: number
+    [CliOption.InputDir]?: string
+    [CliOption.OutputDir]?: string
+    [CliOption.DisableRename]?: boolean
+    [CliOption.Verbose]?: boolean
+    [CliOption.DecimalPrecision]?: number
 }
 
 const getNumberInput = async (
@@ -52,14 +50,18 @@ const getNumberInput = async (
 
 const getCommonOptions = async (rl: ReturnType<typeof createInterface>, defaults: Partial<CommonOptions> = {}) => {
     const options: CommonOptions = {
-        'input-dir': await interactivePrompt(rl, 'Input directory', defaults['input-dir']),
-        'output-dir': await interactivePrompt(rl, 'Output directory', defaults['output-dir']),
-        'disable-rename': !(await getBooleanInput(rl, 'Enable file renaming', !defaults['disable-rename'])),
-        verbose: await getBooleanInput(rl, 'Enable verbose logging', defaults['verbose']),
-        [DECIMAL_PRECISION_OPTION]: await getNumberInput(
+        [CliOption.InputDir]: await interactivePrompt(rl, 'Input directory', defaults[CliOption.InputDir]),
+        [CliOption.OutputDir]: await interactivePrompt(rl, 'Output directory', defaults[CliOption.OutputDir]),
+        [CliOption.DisableRename]: !(await getBooleanInput(
+            rl,
+            'Enable file renaming',
+            !defaults[CliOption.DisableRename]
+        )),
+        [CliOption.Verbose]: await getBooleanInput(rl, 'Enable verbose logging', defaults[CliOption.Verbose]),
+        [CliOption.DecimalPrecision]: await getNumberInput(
             rl,
             'Decimal precision',
-            defaults[DECIMAL_PRECISION_OPTION] ?? 3
+            defaults[CliOption.DecimalPrecision] ?? 3
         )
     }
     return options
@@ -103,10 +105,10 @@ const handleProcessorOptions = async (selectedLambda: LambdaType, rl: ReturnType
 
     // Get common options interactively
     const commonDefaults = {
-        'input-dir': `input/${selectedLambda}`,
-        'output-dir': `output/${selectedLambda}`,
-        'disable-rename': false,
-        verbose: false
+        [CliOption.InputDir]: `input/${selectedLambda}`,
+        [CliOption.OutputDir]: `output/${selectedLambda}`,
+        [CliOption.DisableRename]: false,
+        [CliOption.Verbose]: false
     }
 
     const options = await getCommonOptions(rl, commonDefaults)
@@ -120,24 +122,24 @@ const handleProcessorOptions = async (selectedLambda: LambdaType, rl: ReturnType
     }
 
     // Set the gathered options
-    if (options['input-dir']) process.argv.push('--input-dir', options['input-dir'])
-    if (options['output-dir']) process.argv.push('--output-dir', options['output-dir'])
-    if (options['disable-rename']) process.argv.push('--disable-rename')
-    if (options['verbose']) process.argv.push('--verbose')
-    if (options[DECIMAL_PRECISION_OPTION])
-        process.argv.push(`--${DECIMAL_PRECISION_OPTION}`, options[DECIMAL_PRECISION_OPTION].toString())
+    if (options[CliOption.InputDir]) process.argv.push(`--${CliOption.InputDir}`, options[CliOption.InputDir])
+    if (options[CliOption.OutputDir]) process.argv.push(`--${CliOption.OutputDir}`, options[CliOption.OutputDir])
+    if (options[CliOption.DisableRename]) process.argv.push(`--${CliOption.DisableRename}`)
+    if (options[CliOption.Verbose]) process.argv.push(`--${CliOption.Verbose}`)
+    if (options[CliOption.DecimalPrecision])
+        process.argv.push(`--${CliOption.DecimalPrecision}`, options[CliOption.DecimalPrecision].toString())
 }
 
 const main = async () => {
     // Parse command-line arguments
     const argv = yargs(hideBin(process.argv))
-        .option('non-interactive', {
+        .option(CliOption.NonInteractive, {
             alias: 'n',
             type: 'boolean',
             description: 'Run in non-interactive mode (requires all options to be provided via command line)',
             default: false
         })
-        .option('processor', {
+        .option(CliOption.Processor, {
             alias: 'p',
             type: 'string',
             description: 'Processor to run (kaluza or microvesicles)',
@@ -151,15 +153,15 @@ const main = async () => {
         let selectedLambda: LambdaType
         let rl: ReturnType<typeof createInterface> | undefined
 
-        if (!argv.nonInteractive) {
+        if (!argv[CliOption.NonInteractive]) {
             // Create a single readline interface for all interactive operations
             rl = createInterface({ input, output })
-            selectedLambda = (argv.processor as LambdaType) ?? (await displayMenu(rl))
+            selectedLambda = (argv[CliOption.Processor] as LambdaType) ?? (await displayMenu(rl))
         } else {
-            if (!argv.processor) {
+            if (!argv[CliOption.Processor]) {
                 throw new Error('Processor must be specified in non-interactive mode')
             }
-            selectedLambda = argv.processor as LambdaType
+            selectedLambda = argv[CliOption.Processor] as LambdaType
         }
 
         logger.info(`Starting ${chalk.bold(selectedLambda)} processor...`)
@@ -172,7 +174,7 @@ const main = async () => {
         }
 
         // In interactive mode, gather options
-        if (rl && !argv.nonInteractive) {
+        if (rl && !argv[CliOption.NonInteractive]) {
             await handleProcessorOptions(selectedLambda, rl)
             rl.close()
         }

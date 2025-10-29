@@ -14,36 +14,37 @@ import {
     getOutputDir,
     getInputDir,
     getShouldRename,
-    getDecimalPrecision
+    getDecimalPrecision,
+    CliOption
 } from '@/functions/utils/options.mjs'
 
 export const handler = async () => {
     // Parse command line arguments using yargs
     const argv = yargs(hideBin(process.argv))
-        .option('input-dir', {
+        .option(CliOption.InputDir, {
             alias: 'i',
             description: 'Input directory containing CSV files',
             type: 'string',
             default: 'input/microvesicles'
         })
-        .option('output-dir', {
+        .option(CliOption.OutputDir, {
             alias: 'o',
             description: 'Output directory for processed CSV files',
             type: 'string',
             default: 'output/microvesicles'
         })
-        .option('disable-rename', {
+        .option(CliOption.DisableRename, {
             description: 'Do not rename processed files with DONE_ prefix',
             type: 'boolean',
             default: false
         })
-        .option('verbose', {
+        .option(CliOption.Verbose, {
             alias: 'v',
             description: 'Show detailed timing and processing information',
             type: 'boolean',
             default: false
         })
-        .option('decimal-precision', {
+        .option(CliOption.DecimalPrecision, {
             alias: 'dp',
             description: 'Number of decimal places for numeric values',
             type: 'number',
@@ -57,15 +58,15 @@ export const handler = async () => {
         .parseSync()
 
     // Get input/output directories, rename option and verbose flag
-    setInputDir(argv['input-dir'] as string)
-    setOutputDir(argv['output-dir'] as string)
-    setShouldRename(!(argv['disable-rename'] as boolean))
-    setDecimalPrecision(argv['decimal-precision'] as number)
+    setInputDir(argv[CliOption.InputDir] as string)
+    setOutputDir(argv[CliOption.OutputDir] as string)
+    setShouldRename(!(argv[CliOption.DisableRename] as boolean))
+    setDecimalPrecision(argv[CliOption.DecimalPrecision] as number)
 
     const inputDir = getInputDir()
     const outputDir = getOutputDir()
     const shouldRename = getShouldRename()
-    const isVerbose = argv['verbose'] as boolean
+    const isVerbose = argv[CliOption.Verbose] as boolean
     const decimalPrecision = getDecimalPrecision()
 
     // Re-initialize logger with verbose setting
@@ -73,7 +74,7 @@ export const handler = async () => {
 
     logger.info(`${chalk.bold('Configuration:')}`)
 
-    logger.info(`  • Input directory: ${chalk.cyan()}`)
+    logger.info(`  • Input directory: ${chalk.cyan(inputDir)}`)
     logger.info(`  • Output directory: ${chalk.cyan(outputDir)}`)
     logger.info(`  • File renaming: ${shouldRename ? chalk.green('enabled') : chalk.yellow('disabled')}`)
     logger.info(`  • Verbose logging: ${isVerbose ? chalk.green('enabled') : chalk.gray('disabled')}`)

@@ -13,7 +13,8 @@ import {
     setDataSetFilter,
     getInputDir,
     getOutputDir,
-    getShouldRename
+    getShouldRename,
+    CliOption
 } from '@/functions/utils/options.mjs'
 
 export const handler = async () => {
@@ -24,24 +25,24 @@ export const handler = async () => {
             description: 'Comma-separated list of dataset terms to filter out',
             type: 'string'
         })
-        .option('input-dir', {
+        .option(CliOption.InputDir, {
             alias: 'i',
             description: 'Input directory containing CSV files',
             type: 'string',
             default: 'input/kaluza'
         })
-        .option('output-dir', {
+        .option(CliOption.OutputDir, {
             alias: 'o',
             description: 'Output directory for processed CSV files',
             type: 'string',
             default: 'output/kaluza'
         })
-        .option('disable-rename', {
+        .option(CliOption.DisableRename, {
             description: 'Do not rename processed files with DONE_ prefix',
             type: 'boolean',
             default: false
         })
-        .option('verbose', {
+        .option(CliOption.Verbose, {
             alias: 'v',
             description: 'Show detailed timing and processing information',
             type: 'boolean',
@@ -55,9 +56,9 @@ export const handler = async () => {
         .parseSync()
 
     // Set options using singletons
-    setInputDir(argv['input-dir'] as string)
-    setOutputDir(argv['output-dir'] as string)
-    setShouldRename(!(argv['disable-rename'] as boolean))
+    setInputDir(argv[CliOption.InputDir] as string)
+    setOutputDir(argv[CliOption.OutputDir] as string)
+    setShouldRename(!(argv[CliOption.DisableRename] as boolean))
     setDataSetFilter(argv.filter)
 
     const dataSetFilter = argv.filter ? argv.filter.split(',').map((item) => item.trim()) : []
