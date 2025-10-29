@@ -24,7 +24,7 @@ export const getInputDir = (): string => _inputDir
 
 let _outputDir = 'output'
 export const setOutputDir = (dir?: string) => {
-    _outputDir = `${dir ?? 'output'}/${DateTime.now().toISO()}`
+    _outputDir = `${dir ?? 'output'}`
 }
 export const getOutputDir = (): string => _outputDir
 
