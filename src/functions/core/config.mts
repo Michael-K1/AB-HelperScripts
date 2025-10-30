@@ -9,7 +9,11 @@ import {
     getInputDir,
     getOutputDir,
     getShouldRename,
-    getDecimalPrecision
+    getDecimalPrecision,
+    setDataSetFilter,
+    getDataSetFilter,
+    setVerbose,
+    getVerbose
 } from '../utils/options.mjs'
 
 /**
@@ -20,6 +24,7 @@ export function setupCommonConfig(argv: Arguments): ProcessorOptions {
     setInputDir(argv[CliOption.InputDir] as string)
     setOutputDir(argv[CliOption.OutputDir] as string)
     setShouldRename(!(argv[CliOption.DisableRename] as boolean))
+    setVerbose(argv[CliOption.Verbose] as boolean)
 
     // Handle decimal precision if provided
     if (CliOption.DecimalPrecision in argv) {
@@ -31,7 +36,26 @@ export function setupCommonConfig(argv: Arguments): ProcessorOptions {
         inputDir: getInputDir(),
         outputDir: getOutputDir(),
         disableRename: getShouldRename(),
-        verbose: argv[CliOption.Verbose] as boolean,
+        verbose: getVerbose(),
         [CliOption.DecimalPrecision]: getDecimalPrecision()
     }
+}
+
+/**
+ * Sets up processor-specific configuration from CLI arguments
+ */
+export function setupAdditionalConfig(argv: Arguments, options: ProcessorOptions): ProcessorOptions {
+    // Handle decimal precision if provided
+    if (CliOption.DecimalPrecision in argv) {
+        setDecimalPrecision(argv[CliOption.DecimalPrecision] as number)
+        options[CliOption.DecimalPrecision] = getDecimalPrecision()
+    }
+
+    // Handle dataset filter if provided
+    if (CliOption.Filter in argv && argv[CliOption.Filter]) {
+        setDataSetFilter(argv[CliOption.Filter] as string)
+        options.dataSetFilter = getDataSetFilter()
+    }
+
+    return options
 }
