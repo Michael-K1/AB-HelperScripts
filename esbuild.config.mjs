@@ -3,10 +3,10 @@ import { readdirSync } from 'node:fs'
 import { build } from 'esbuild'
 
 // Automatically find all handlers in src/lambda
-const entries = readdirSync('src/lambda')
-    .filter((file) => file.endsWith('main.mts'))
+const entries = readdirSync('src/main')
+    .filter((file) => file.endsWith('.mts'))
     .map((file) => ({
-        entryPoints: [`src/lambda/${file}`],
+        entryPoints: [`src/main/${file}`],
         outfile: `build/${file.split('.')[0]}/${file.replace(/\.mts$/, '.mjs')}`
     }))
 

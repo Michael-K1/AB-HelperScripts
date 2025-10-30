@@ -30,7 +30,7 @@ export const createLogger = (verbose: boolean = false) => ({
     timing: {
         start: (label: string) => {
             if (verbose || isImportantTimer(label)) {
-                console.time(chalk.cyan(`⏱️ [TIMING] ${label}`))
+                console.time(chalk.cyan(`[TIMING ⏱️] ${label}`))
             }
             TIMERS[label] = DateTime.now()
         },
@@ -39,7 +39,7 @@ export const createLogger = (verbose: boolean = false) => ({
             const isProcessingTimer = label.startsWith('Processing')
 
             if (verbose || isImportantTimer(label)) {
-                console.timeEnd(chalk.cyan(`⏱️ [TIMING] ${label}`))
+                console.timeEnd(chalk.cyan(`[TIMING ⏱️] ${label}`))
             } else if (isProcessingTimer && startTime) {
                 // For non-verbose mode, collect timing data without displaying
                 const elapsed = DateTime.now().diff(startTime).milliseconds

@@ -20,21 +20,20 @@ export const processorConfig: ProcessorConfig<MicrovesiclesCSVInput> = {
     // Handle interactive setup of processor-specific options
     setupOptions: async (rl: ReadlineInterface) => {
         // Ask for decimal precision with pretty formatting
-        logger.info(chalk.dim('\n─'.repeat(50)))
         logger.info(chalk.bold('🔢 Decimal Precision Configuration:'))
 
         const answer = await rl.question(
-            chalk.blue('🎯 Enter decimal precision for numeric values') + chalk.gray(' (default: 3): ')
+            chalk.blue('[INFO] 🎯 Enter decimal precision for numeric values') + chalk.gray(' (default: 3): ')
         )
 
         // Parse and validate the decimal precision
         const precision = parseInt(answer)
         if (!answer || isNaN(precision)) {
-            logger.info('\n⚠️  Using default precision: 3')
+            logger.info('⚠️  Using default precision: 3')
             setDecimalPrecision(3)
         } else {
             setDecimalPrecision(precision)
-            logger.info(`\n✓ Set decimal precision to: ${chalk.yellow(precision)}`)
+            logger.info(`✓ Set decimal precision to: ${chalk.yellow(precision)}`)
         }
         logger.info(chalk.dim('─'.repeat(50)) + '\n')
     },

@@ -1,8 +1,4 @@
-import { createInterface } from 'node:readline/promises'
 import { DateTime } from 'luxon'
-import chalk from 'chalk'
-import { Processors, ProcessorType } from '@/@types/processors.mjs'
-import { logger } from '@/functions/utils/logger.mjs'
 
 export enum CliOption {
     InputDir = 'input-dir',
@@ -62,61 +58,4 @@ export interface CommonOptions {
     [CliOption.OutputDir]?: string
     [CliOption.DisableRename]?: boolean
     [CliOption.Verbose]?: boolean
-}
-
-export const getBooleanInput = async (
-    rl: ReturnType<typeof createInterface>,
-    question: string,
-    defaultValue: boolean = false
-) => {
-    const answer = await rl.question(chalk.blue(`${question} (y/n)${chalk.gray(` (${defaultValue ? 'y' : 'n'})`)}: `))
-    if (!answer) return defaultValue
-    return answer.toLowerCase().startsWith('y')
-}
-
-export const interactivePrompt = async (
-    rl: ReturnType<typeof createInterface>,
-    question: string,
-    defaultValue?: string
-) => {
-    const defaultText = defaultValue ? chalk.gray(` (${defaultValue})`) : ''
-    const answer = await rl.question(chalk.blue(`${question}${defaultText}: `))
-    return answer.trim() || defaultValue || ''
-}
-
-export const displayMainMenu = async (rl: ReturnType<typeof createInterface>): Promise<ProcessorType> => {
-    console.clear()
-
-    // Header
-    const title = ' 🧬 AB Helper Scripts '
-    const padding = '─'.repeat(Math.max(0, (50 - title.length) / 2))
-    logger.info('\n' + chalk.dim(padding) + chalk.bold.magenta(title) + chalk.dim(padding))
-
-    // Menu
-    logger.info(chalk.bold('\nAvailable Processors:'))
-    logger.info(chalk.dim('─'.repeat(50)))
-
-    // Display available Processors with colors and descriptions
-    Object.keys(Processors).forEach((processor, index) => {
-        const description = processor === 'kaluza' ? 'Process Kaluza data files' : 'Process microvesicles data'
-        logger.info(`  ${chalk.green(index + 1)}) ${chalk.yellow(processor.padEnd(15))} ${chalk.dim(description)}`)
-    })
-
-    logger.info(chalk.dim('─'.repeat(50)))
-
-    const answer = await rl.question(chalk.blue('\nSelect a processor (number or name): '))
-    const normalizedAnswer = answer.toLowerCase().trim()
-    const numberChoice = parseInt(normalizedAnswer)
-
-    if (!isNaN(numberChoice) && numberChoice > 0 && numberChoice <= Object.keys(Processors).length) {
-        const processor = Object.keys(Processors)[numberChoice - 1] as ProcessorType
-        return processor
-    }
-
-    if (normalizedAnswer in Processors) {
-        return normalizedAnswer as ProcessorType
-    }
-
-    logger.error('Invalid selection. Please try again.')
-    return displayMainMenu(rl)
 }

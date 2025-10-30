@@ -22,17 +22,16 @@ export const processorConfig: ProcessorConfig<kaluzaCSVInput> = {
         logger.info(chalk.bold('🔍 Dataset Filter Configuration:'))
 
         const filter = await rl.question(
-            chalk.blue('🏷️  Enter dataset terms to filter (comma-separated)') +
-                chalk.gray(' (leave empty for no filters): ')
+            `${chalk.blue('[INFO] [Kaluza] 🏷️  Enter dataset terms to filter (comma-separated)')}${chalk.gray(' (leave empty for no filters): ')}`
         )
 
         // Set the filter in the singleton if provided
         if (filter.trim()) {
             setDataSetFilter(filter)
             const terms = filter.split(',').map((t) => t.trim())
-            logger.info(`\n✓ Will filter datasets containing: ${chalk.yellow(terms.join(', '))}`)
+            logger.info(`[Kaluza] ✓ Will filter datasets containing: ${chalk.yellow(terms.join(', '))}`)
         } else {
-            logger.info('\n⚠️  No dataset filters applied')
+            logger.info(`[Kaluza] ⚠️  No dataset filters applied`)
         }
         logger.info(chalk.dim('─'.repeat(50)) + '\n')
     },
@@ -51,7 +50,7 @@ export const handler = async () => {
         const inputFiles = await getInputFiles(getInputDir())
         await processFiles(inputFiles, processorConfig)
     } catch (error) {
-        logger.error('An error occurred:', error)
+        logger.error(`[Kaluza] An error occurred:`, error)
         process.exit(1)
     }
 }

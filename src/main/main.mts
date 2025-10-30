@@ -4,40 +4,22 @@ import chalk from 'chalk'
 import { Processors, ProcessorType } from '@/@types/processors.mjs'
 import { logger } from '../functions/utils/logger.mjs'
 import { createMainCLI } from '../functions/core/cli.mjs'
-
+import { CliOption, setInputDir, setOutputDir, setShouldRename, setVerbose } from '../functions/utils/options.mjs'
 import {
-    CliOption,
+    calculatePadding,
     displayMainMenu,
-    setInputDir,
-    setOutputDir,
-    setShouldRename,
-    setVerbose
-} from '../functions/utils/options.mjs'
-
-const interactivePrompt = async (rl: ReturnType<typeof createInterface>, question: string, defaultValue?: string) => {
-    const defaultText = defaultValue ? chalk.gray(` (${defaultValue})`) : ''
-    const answer = await rl.question(chalk.blue(`${question}${defaultText}: `))
-    return answer.trim() || defaultValue || ''
-}
-
-const getBooleanInput = async (
-    rl: ReturnType<typeof createInterface>,
-    question: string,
-    defaultValue: boolean = false
-) => {
-    const answer = await rl.question(chalk.blue(`${question} (y/n)${chalk.gray(` (${defaultValue ? 'y' : 'n'})`)}: `))
-    if (!answer) return defaultValue
-    return answer.toLowerCase().startsWith('y')
-}
+    getBooleanInput,
+    interactivePrompt,
+    displayConfigurationBox
+} from '../functions/core/display.mjs'
 
 const handleProcessorOptions = async (rl: ReturnType<typeof createInterface>, selectedProcessor: ProcessorType) => {
-    // Pretty header for configuration section with lab theme
-    const header = ' 🧬 AB Helper Scripts '
-    const padding = '═'.repeat(Math.max(0, (50 - header.length) / 2))
-    logger.info('\n' + chalk.dim(padding) + chalk.bold.magenta(header) + chalk.dim(padding))
+    const boxWidth = 50 // Increased width to accommodate longer directory names
 
     // Section separator with lab theme
-    logger.info(chalk.dim('\n┌──') + chalk.bold.cyan(' 🧪 Configuration Setup ') + chalk.dim('──┐'))
+    const setupHeaderText = ' 🧪 Configuration Setup '
+    const [setupLeftPad, setupRightPad] = calculatePadding('─', setupHeaderText, boxWidth)
+    logger.info(chalk.dim('─' + setupLeftPad) + chalk.bold.cyan(setupHeaderText) + chalk.dim(setupRightPad + '─'))
 
     // Get input for common options with lab-themed emojis
     const inputDir = await interactivePrompt(rl, '🔬 Input directory', `input/${selectedProcessor}`)
@@ -51,22 +33,8 @@ const handleProcessorOptions = async (rl: ReturnType<typeof createInterface>, se
     setShouldRename(enableRename)
     setVerbose(verbose)
 
-    // Display configuration summary with lab-themed box design
-    logger.info(chalk.dim('\n┌──') + chalk.bold.magenta(' 📊 Configuration Summary ') + chalk.dim('──┐'))
-    logger.info(chalk.dim('├' + '─'.repeat(48) + '┤'))
-    logger.info(chalk.dim('│') + `  🔬 Input directory:  ${chalk.yellow(inputDir)}`.padEnd(47) + chalk.dim('│'))
-    logger.info(chalk.dim('│') + `  🧫 Output directory: ${chalk.yellow(outputDir)}`.padEnd(47) + chalk.dim('│'))
-    logger.info(
-        chalk.dim('│') +
-            `  🧪 File renaming:    ${!enableRename ? chalk.red('❌ disabled') : chalk.green('✓ enabled')}`.padEnd(47) +
-            chalk.dim('│')
-    )
-    logger.info(
-        chalk.dim('│') +
-            `  🔭 Verbose logging:  ${verbose ? chalk.green('✓ enabled') : chalk.yellow('❌ disabled')}`.padEnd(47) +
-            chalk.dim('│')
-    )
-    logger.info(chalk.dim('└' + '─'.repeat(48) + '┘\n'))
+    // Display configuration summary
+    displayConfigurationBox()
 }
 
 const main = async () => {

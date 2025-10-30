@@ -8,8 +8,8 @@ import { CliOption } from '../functions/utils/options.mjs'
 
 // Import all lambda handlers
 const lambdas = {
-    kaluza: () => import('./kaluzaParser.mjs'),
-    microvesicles: () => import('./microvesicles.mjs')
+    kaluza: () => import('../lambda/kaluzaParser.mjs'),
+    microvesicles: () => import('../lambda/microvesicles.mjs')
 } as const
 
 type LambdaType = keyof typeof lambdas
